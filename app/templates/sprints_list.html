@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="ha-card">
+    <h1>Sprints</h1>
+
+    {% if sprints %}
+    <table class="ha-table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Goal</th>
+            <th>Status</th>
+            <th>Dates</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for sprint in sprints %}
+            <tr class="ha-table-row-link" onclick="window.location='{{ request.url_for('sprint_detail_page', sprint_id=sprint.id) }}'">
+                <td>{{ sprint.id }}</td>
+                <td>
+                    <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id) }}" class="ha-link">
+                        {{ sprint.title }}
+                    </a>
+                </td>
+                <td>{{ sprint.goal_text }}</td>
+                <td>
+                    {% if sprint.status is string %}
+                        {{ sprint.status }}
+                    {% else %}
+                        {{ sprint.status.value }}
+                    {% endif %}
+                </td>
+                <td>{{ sprint.start_date }} – {{ sprint.end_date }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No sprints yet. Create the first one 👇</p>
+    {% endif %}
+</section>
+
+<section class="ha-card">
+    <h2>Create sprint</h2>
+    <form method="post" action="{{ request.url_for('create_sprint_ui') }}" class="ha-form">
+        <div class="ha-form-row">
+            <label>Title</label>
+            <input type="text" name="title" required maxlength="255">
+        </div>
+        <div class="ha-form-row">
+            <label>Goal</label>
+            <input type="text" name="goal_text" required>
+        </div>
+        <div class="ha-form-row">
+            <label>Start date</label>
+            <input type="date" name="start_date" required>
+        </div>
+        <div class="ha-form-row">
+            <label>End date</label>
+            <input type="date" name="end_date" required>
+        </div>
+        <div class="ha-form-actions">
+            <button type="submit">Create sprint</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

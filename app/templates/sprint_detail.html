@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if not sprint %}
+<section class="ha-card">
+    <h1>Sprint not found</h1>
+    <p>The sprint you are trying to view does not exist.</p>
+    <a class="ha-link" href="{{ request.url_for('sprints_page') }}">Back to sprints</a>
+</section>
+{% else %}
+<section class="ha-card ha-flex-column">
+    <a class="ha-link" href="{{ request.url_for('sprints_page') }}">← Back to sprints</a>
+    <div class="ha-detail-header">
+        <div>
+            <h1>{{ sprint.title }}</h1>
+            <p class="ha-subtitle">{{ sprint.goal_text }}</p>
+        </div>
+        <span class="ha-status-badge ha-status-{{ sprint.status.value if sprint.status is not string else sprint.status }}">
+            {% if sprint.status is string %}{{ sprint.status|capitalize }}{% else %}{{ sprint.status.value|capitalize }}{% endif %}
+        </span>
+    </div>
+    <div class="ha-detail-meta">
+        <div>
+            <p class="ha-label">Date range</p>
+            <p>{{ sprint.start_date }} – {{ sprint.end_date }}</p>
+        </div>
+        <div>
+            <p class="ha-label">Habits</p>
+            <p>{{ overview.habits_count }}</p>
+        </div>
+        <div>
+            <p class="ha-label">Sessions</p>
+            <p>{{ overview.sessions_count }}</p>
+        </div>
+        <div>
+            <p class="ha-label">Completed</p>
+            <p>{{ overview.done_sessions }}</p>
+        </div>
+    </div>
+</section>
+
+<section class="ha-card ha-overview-grid">
+    <div>
+        <p class="ha-label">Completion rate</p>
+        <p class="ha-overview-value">
+            {% if overview.completion_rate is not none %}
+                {{ overview.completion_rate }}%
+            {% else %}
+                —
+            {% endif %}
+        </p>
+    </div>
+    <div>
+        <p class="ha-label">Planned minutes</p>
+        <p class="ha-overview-value">{{ overview.total_planned_minutes }}</p>
+    </div>
+    <div>
+        <p class="ha-label">Actual minutes</p>
+        <p class="ha-overview-value">
+            {% if overview.total_actual_minutes is not none %}
+                {{ overview.total_actual_minutes }}
+            {% else %}
+                —
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<section class="ha-card">
+    <div class="ha-card-header">
+        <h2>Habits</h2>
+    </div>
+    {% if habits %}
+    <table class="ha-table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Target sessions/day</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for habit in habits %}
+            <tr>
+                <td>{{ habit.name }}</td>
+                <td>{{ habit.description or "—" }}</td>
+                <td>{{ habit.target_sessions_per_day }}</td>
+                <td>
+                    <form method="post" action="{{ request.url_for('delete_habit_ui', habit_id=habit.id) }}" class="ha-inline-form">
+                        <button type="submit" class="ha-button ha-button-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="ha-empty">No habits for this sprint yet.</p>
+    {% endif %}
+
+    <div class="ha-divider"></div>
+
+    <form method="post" action="{{ request.url_for('create_habit_ui', sprint_id=sprint.id) }}" class="ha-form ha-form-inline">
+        <h3 class="ha-form-title">Add habit</h3>
+        <div class="ha-form-grid">
+            <div class="ha-form-row">
+                <label for="habit-name">Name</label>
+                <input id="habit-name" type="text" name="name" required maxlength="255">
+            </div>
+            <div class="ha-form-row">
+                <label for="habit-description">Description</label>
+                <input id="habit-description" type="text" name="description" placeholder="Optional">
+            </div>
+            <div class="ha-form-row">
+                <label for="habit-target">Target sessions/day</label>
+                <input id="habit-target" type="number" name="target_sessions_per_day" min="1" required>
+            </div>
+        </div>
+        <div class="ha-form-actions">
+            <button type="submit" class="ha-button ha-button-primary">Add habit</button>
+        </div>
+    </form>
+</section>
+
+<section class="ha-card">
+    <div class="ha-card-header">
+        <h2>Sessions</h2>
+    </div>
+
+    <div class="sessions-filter">
+        {% set filter_url = request.url_for('sprint_detail_page', sprint_id=sprint.id) %}
+        <a href="{{ filter_url }}" class="filter-pill{% if sessions_filter == 'all' %} filter-pill--active{% endif %}">All</a>
+        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='planned') }}" class="filter-pill{% if sessions_filter == 'planned' %} filter-pill--active{% endif %}">Planned</a>
+        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='done') }}" class="filter-pill{% if sessions_filter == 'done' %} filter-pill--active{% endif %}">Done</a>
+        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='skipped') }}" class="filter-pill{% if sessions_filter == 'skipped' %} filter-pill--active{% endif %}">Skipped</a>
+    </div>
+
+    {% if sessions %}
+    <table class="ha-table">
+        <thead>
+        <tr>
+            <th>Planned time</th>
+            <th>Habit</th>
+            <th>Status</th>
+            <th>Actual duration</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for session in sessions %}
+            <tr>
+                <td>{{ session.planned_start or "—" }}</td>
+                <td>{{ session.habit.name if session.habit else "—" }}</td>
+                <td>
+                    <span class="ha-status-badge ha-session-{{ session.status.value if session.status is not string else session.status }}">
+                        {% if session.status is string %}
+                            {{ session.status|capitalize }}
+                        {% else %}
+                            {{ session.status.value|capitalize }}
+                        {% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if session.actual_duration_min %}
+                        {{ session.actual_duration_min }} min
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if session.status == session.status.PLANNED or session.status == 'planned' %}
+                        <form method="post" action="{{ request.url_for('complete_session_ui', session_id=session.id) }}" class="ha-inline-form">
+                            <input type="hidden" name="next_filter" value="{{ sessions_filter }}">
+                            <button type="submit" class="ha-button ha-button-primary">Mark as done</button>
+                        </form>
+                        <form method="post" action="{{ request.url_for('skip_session_ui', session_id=session.id) }}" class="ha-inline-form">
+                            <input type="hidden" name="next_filter" value="{{ sessions_filter }}">
+                            <button type="submit" class="ha-button ha-button-secondary">Skip</button>
+                        </form>
+                    {% elif session.status == session.status.DONE or session.status == 'done' %}
+                        <span class="ha-muted">Completed</span>
+                    {% else %}
+                        <span class="ha-muted">Skipped</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="ha-empty">No sessions match this filter.</p>
+    {% endif %}
+
+    <div class="ha-divider"></div>
+
+    <form method="post" action="{{ request.url_for('plan_session_ui', sprint_id=sprint.id) }}" class="ha-form ha-form-inline">
+        <h3 class="ha-form-title">Plan session</h3>
+        <input type="hidden" name="next_filter" value="{{ sessions_filter }}">
+        <div class="ha-form-grid">
+            <div class="ha-form-row">
+                <label for="session-habit">Habit</label>
+                <select id="session-habit" name="habit_id">
+                    <option value="">None</option>
+                    {% for habit in habits %}
+                        <option value="{{ habit.id }}">{{ habit.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ha-form-row">
+                <label for="session-date">Date</label>
+                <input id="session-date" type="date" name="planned_start_date" required>
+            </div>
+            <div class="ha-form-row">
+                <label for="session-time">Time</label>
+                <input id="session-time" type="time" name="planned_start_time" placeholder="09:00">
+            </div>
+            <div class="ha-form-row">
+                <label for="session-duration">Duration (min)</label>
+                <input id="session-duration" type="number" name="planned_duration_min" min="1" required>
+            </div>
+            <div class="ha-form-row ha-form-row-wide">
+                <label for="session-notes">Notes</label>
+                <textarea id="session-notes" name="notes" rows="2" placeholder="Optional"></textarea>
+            </div>
+        </div>
+        <div class="ha-form-actions">
+            <button type="submit" class="ha-button ha-button-primary">Plan session</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Habit Architect — Study Sprints</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+</head>
+<body>
+<header class="ha-header">
+    <div class="ha-header-title">Habit Architect — Study Sprints</div>
+    <nav class="ha-header-nav">
+        <a href="{{ request.url_for('sprints_page') }}">Sprints</a>
+        <a href="/docs" target="_blank">API Docs</a>
+    </nav>
+</header>
+<main class="ha-container">
+    {% if flash_msg or flash_error %}
+        <div class="flash-container">
+            {% if flash_msg %}
+                <div class="flash flash-success">{{ flash_msg }}</div>
+            {% endif %}
+            {% if flash_error %}
+                <div class="flash flash-error">{{ flash_error }}</div>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+</body>
+</html>

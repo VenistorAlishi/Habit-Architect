@@ -8,6 +8,7 @@
     <a class="ha-link" href="{{ request.url_for('sprints_page') }}">Back to sprints</a>
 </section>
 {% else %}
+{% set sprint_url = request.url_for('sprint_detail_page', sprint_id=sprint.id) %}
 <section class="ha-card ha-flex-column">
     <a class="ha-link" href="{{ request.url_for('sprints_page') }}">← Back to sprints</a>
     <div class="ha-detail-header">
@@ -129,11 +130,10 @@
     </div>
 
     <div class="sessions-filter">
-        {% set filter_url = request.url_for('sprint_detail_page', sprint_id=sprint.id) %}
-        <a href="{{ filter_url }}" class="filter-pill{% if sessions_filter == 'all' %} filter-pill--active{% endif %}">All</a>
-        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='planned') }}" class="filter-pill{% if sessions_filter == 'planned' %} filter-pill--active{% endif %}">Planned</a>
-        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='done') }}" class="filter-pill{% if sessions_filter == 'done' %} filter-pill--active{% endif %}">Done</a>
-        <a href="{{ request.url_for('sprint_detail_page', sprint_id=sprint.id, filter='skipped') }}" class="filter-pill{% if sessions_filter == 'skipped' %} filter-pill--active{% endif %}">Skipped</a>
+        <a href="{{ sprint_url }}" class="filter-pill{% if sessions_filter == 'all' %} filter-pill--active{% endif %}">All</a>
+        <a href="{{ sprint_url.include_query_params(filter='planned') }}" class="filter-pill{% if sessions_filter == 'planned' %} filter-pill--active{% endif %}">Planned</a>
+        <a href="{{ sprint_url.include_query_params(filter='done') }}" class="filter-pill{% if sessions_filter == 'done' %} filter-pill--active{% endif %}">Done</a>
+        <a href="{{ sprint_url.include_query_params(filter='skipped') }}" class="filter-pill{% if sessions_filter == 'skipped' %} filter-pill--active{% endif %}">Skipped</a>
     </div>
 
     {% if sessions %}

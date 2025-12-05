@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import Select, case, func, select
 from sqlalchemy.orm import Session
+from starlette.datastructures import URL
 
 from app.db import get_db
 from app.models import Habit, Session, SessionStatus, Sprint
@@ -77,12 +78,12 @@ def _normalize_filter(value: str | None) -> str:
     return "all"
 
 
-def _default_redirect(url: str, message: str | None = None, error: bool = False) -> RedirectResponse:
-    suffix = ""
+def _default_redirect(url: URL | str, message: str | None = None, error: bool = False) -> RedirectResponse:
+    url_obj = url if isinstance(url, URL) else URL(url)
     if message:
         param = "error" if error else "msg"
-        suffix = ("?" if "?" not in url else "&") + f"{param}={message}"
-    return RedirectResponse(url + suffix, status_code=303)
+        url_obj = url_obj.include_query_params(**{param: message})
+    return RedirectResponse(str(url_obj), status_code=303)
 
 
 @ui_router.get("/", response_class=HTMLResponse, name="sprints_page")
@@ -123,13 +124,17 @@ def create_sprint_ui(
     db.add(sprint)
     db.commit()
 
-    return RedirectResponse(
-        request.url_for("sprints_page") + "?msg=Sprint+created",
-        status_code=303,
+    redirect_url = request.url_for("sprints_page").include_query_params(
+        msg="Sprint created"
     )
+    return RedirectResponse(str(redirect_url), status_code=303)
 
 
-@ui_router.get("/sprints/{sprint_id}", response_class=HTMLResponse, name="sprint_detail_page")
+@ui_router.get(
+    "/sprints/{sprint_id}",
+    name="sprint_detail_page",
+    response_class=HTMLResponse,
+)
 def sprint_detail_page(
     request: Request,
     sprint_id: int,
